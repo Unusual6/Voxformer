@@ -139,7 +139,7 @@ model = dict(
 
 
 dataset_type = 'SemanticKittiDatasetStage2'
-data_root = './kitti/'
+data_root = '/data/kitti/kitti/'
 file_client_args = dict(backend='disk')
 
 data = dict(

@@ -1,0 +1,28 @@
+# 忽略所有缓存文件和目录
+*.cache
+cache/
+*.tmp
+*.log
+
+# Python 项目常见的缓存和编译文件
+__pycache__/
+*.py[cod]
+*.pyo
+
+# Node.js 项目常见的缓存文件
+node_modules/
+ckpts
+# 忽略特定工具或框架生成的缓存文件
+.DS_Store
+Thumbs.db
+*.pth
+# 忽略环境配置文件和虚拟环境目录
+.env
+.vscode/
+.idea/
+*.so
+*.o
+*.0
+*.json
+*.log
+*.events
