@@ -4,11 +4,14 @@ cache/
 *.tmp
 *.log
 
+
+result/
 # Python 项目常见的缓存和编译文件
 __pycache__/
 *.py[cod]
 *.pyo
-
+*.ply
+*.pkl
 # Node.js 项目常见的缓存文件
 node_modules/
 ckpts
