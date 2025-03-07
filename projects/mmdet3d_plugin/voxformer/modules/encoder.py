@@ -101,7 +101,7 @@ class VoxFormerEncoder(TransformerLayerSequence):
         lidar2img = np.asarray(lidar2img)
         lidar2img = reference_points.new_tensor(lidar2img)  # (B, N, 4, 4)
         reference_points = reference_points.clone()
-
+        # 从归一化坐标变换到 3D 空间中的实际坐标
         reference_points[..., 0:1] = reference_points[..., 0:1] * \
             (pc_range[3] - pc_range[0]) + pc_range[0]
         reference_points[..., 1:2] = reference_points[..., 1:2] * \
@@ -115,13 +115,13 @@ class VoxFormerEncoder(TransformerLayerSequence):
         reference_points = reference_points.permute(1, 0, 2, 3)
         D, B, num_query = reference_points.size()[:3]
         num_cam = lidar2img.size(1)
-
+        # torch.Size([1, 1, 5, 47468, 4, 1])
         reference_points = reference_points.view(
             D, B, 1, num_query, 4).repeat(1, 1, num_cam, 1, 1).unsqueeze(-1)
-
+        # torch.Size([1, 1, 5, 47468, 4, 4])
         lidar2img = lidar2img.view(
             1, B, num_cam, 1, 4, 4).repeat(D, 1, 1, num_query, 1, 1)
-
+        # torch.Size([1, 1, 5, 47468, 4])
         reference_points_cam = torch.matmul(lidar2img.to(torch.float32),
                                             reference_points.to(torch.float32)).squeeze(-1)
         eps = 1e-5
@@ -193,7 +193,7 @@ class VoxFormerEncoder(TransformerLayerSequence):
 
         hybird_ref_2d = torch.stack([ref_2d, ref_2d], 1).reshape(
                 bs*2, len_bev, num_bev_level, 2)
-
+        # 2d点：空间3d点投影到img 
         reference_points_cam, bev_mask = self.point_sampling(
             ref_3d, self.pc_range, kwargs['img_metas'])
 

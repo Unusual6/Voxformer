@@ -82,6 +82,7 @@ class VoxFormerHead(nn.Module):
         bev_queries = self.bev_embed.weight.to(dtype) #[128*128*16, dim]
 
         # Generate bev postional embeddings for cross and self attention
+        # torch.Size([1, 128, 512, 512])
         bev_pos_cross_attn = self.positional_encoding(torch.zeros((bs, 512, 512), device=bev_queries.device).to(dtype)).to(dtype) # [1, dim, 128*4, 128*4]
         bev_pos_self_attn = self.positional_encoding(torch.zeros((bs, 512, 512), device=bev_queries.device).to(dtype)).to(dtype) # [1, dim, 128*4, 128*4]
 
@@ -92,6 +93,7 @@ class VoxFormerHead(nn.Module):
         vox_coords, ref_3d = self.get_ref_3d()
 
         # Compute seed features of query proposals by deformable cross attention
+        # 可见区域交互后的特征，torch.Size([1, 47468, 128])
         seed_feats = self.cross_transformer.get_vox_features(
             mlvl_feats, 
             bev_queries,
@@ -107,12 +109,14 @@ class VoxFormerHead(nn.Module):
         )
 
         # Complete voxel features by adding mask tokens
+        # vox_feats_flatten 中包含了ummask和img交互后的信息，随机初始化的mask信息
         vox_feats = torch.empty((self.bev_h, self.bev_w, self.bev_z, self.embed_dims), device=bev_queries.device)
         vox_feats_flatten = vox_feats.reshape(-1, self.embed_dims)
         vox_feats_flatten[vox_coords[unmasked_idx[0], 3], :] = seed_feats[0]
         vox_feats_flatten[vox_coords[masked_idx[0], 3], :] = self.mask_embed.weight.view(1, self.embed_dims).expand(masked_idx.shape[1], self.embed_dims).to(dtype)
 
         # Diffuse voxel features by deformable self attention
+        # bev下所有区域的特征，自注意力
         vox_feats_diff = self.self_transformer.diffuse_vox_features(
             mlvl_feats,
             vox_feats_flatten,
@@ -131,7 +135,7 @@ class VoxFormerHead(nn.Module):
             "x3d": vox_feats_diff.permute(3, 0, 1, 2).unsqueeze(0),
         }
         out = self.header(input_dict)
-        return out 
+        return out # torch.Size([1, 20, 256, 256, 32])
 
     def step(self, out_dict, target, img_metas, step_type):
         """Training/validation function.

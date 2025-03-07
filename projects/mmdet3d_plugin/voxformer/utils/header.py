@@ -42,4 +42,4 @@ class Header(nn.Module):
 
         res["ssc_logit"] = ssc_logit_full.reshape(w, l, h, self.class_num).permute(3,0,1,2).unsqueeze(0)
 
-        return res
+        return res  # torch.Size([1, 20, 256, 256, 32])

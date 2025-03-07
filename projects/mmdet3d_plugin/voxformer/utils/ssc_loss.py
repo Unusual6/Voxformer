@@ -113,7 +113,7 @@ def CE_ssc_loss(pred, target, class_weights):
     criterion = nn.CrossEntropyLoss(
         weight=class_weights, ignore_index=255, reduction="none"
     )
-    loss = criterion(pred, target.long())
+    loss = criterion(pred, target.long()) # pred： torch.Size([1, 20, 256, 256, 32]) target：torch.Size([1, 256, 256, 32])
     loss_valid = loss[target!=255]
     loss_valid_mean = torch.mean(loss_valid)
     return loss_valid_mean

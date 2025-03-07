@@ -87,19 +87,16 @@ class PerceptionTransformer(BaseModule):
     def get_vox_features(
             self,
             mlvl_feats,
-            bev_queries,
+            bev_queries, # torch.Size([262144, 1, 128])
             bev_h,
             bev_w,
-            ref_3d,
-            vox_coords,
-            unmasked_idx,
+            ref_3d, # (262144, 3)
+            vox_coords, # (262144, 4)
+            unmasked_idx, # (1, 47468)
             grid_length=[0.512, 0.512],
-            bev_pos=None,
+            bev_pos=None, # torch.Size([262144, 1, 128])
             prev_bev=None,
             **kwargs):
-        """
-        obtain voxel features.
-        """
 
         bs = mlvl_feats[0].size(0)
         bev_queries = bev_queries.unsqueeze(1).repeat(1, bs, 1) #  #[N, 1, 64]

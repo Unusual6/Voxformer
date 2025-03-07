@@ -143,7 +143,7 @@ data_root = '/data/kitti/kitti/'
 file_client_args = dict(backend='disk')
 
 data = dict(
-   samples_per_gpu=1,
+   samples_per_gpu=2,
    workers_per_gpu=4,
    train=dict(
        type=dataset_type,
@@ -208,4 +208,4 @@ log_config = dict(
    ])
 
 checkpoint_config = None
-# checkpoint_config = dict(interval=2)
+checkpoint_config = dict(interval=2)

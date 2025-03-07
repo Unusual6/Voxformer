@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>图像处理</title>
+    <style>
+        /* 通用样式 */
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f4f4f9;
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            position: relative;
+        }
+
+        h1, h2 {
+            color: #333;
+        }
+
+        h1 {
+            margin-bottom: 20px;
+        }
+
+        h2 {
+            margin-top: 30px;
+        }
+
+        /* 容器 */
+        .container {
+            background: #ffffff;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
+            border-radius: 10px;
+            padding: 20px;
+            max-width: 600px;
+            width: 100%;
+            text-align: center;
+        }
+
+        /* 文件上传样式 */
+        input[type="file"] {
+            display: none;
+        }
+
+        .upload-btn {
+            display: inline-block;
+            padding: 10px 20px;
+            background-color: #5e72e4;
+            color: white;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+
+        .upload-btn:hover {
+            background-color: #324cdd;
+        }
+
+        /* 模型选择样式 */
+        select {
+            padding: 10px;
+            margin: 15px 0;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            width: 100%;
+            max-width: 300px;
+            font-size: 16px;
+        }
+
+        /* 按钮样式 */
+        button {
+            padding: 10px 20px;
+            background-color: #2dce89;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+
+        button:hover {
+            background-color: #1aae6f;
+        }
+
+        /* 图像显示样式 */
+        .image-container {
+            display: flex;
+            justify-content: space-around;
+            align-items: center;
+            margin-top: 20px;
+        }
+
+        .image-container img {
+            max-width: 150px;
+            max-height: 150px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            object-fit: contain;
+        }
+
+        .placeholder {
+            color: #aaa;
+            font-size: 14px;
+            text-align: center;
+            margin-top: 10px;
+        }
+
+        /* 悬浮背景上传按钮 */
+        .bg-upload-btn {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            padding: 10px 15px;
+            background-color: #ff7f50;
+            color: white;
+            border-radius: 50%;
+            box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.2);
+            cursor: pointer;
+            font-size: 20px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: transform 0.2s, background-color 0.3s;
+        }
+
+        .bg-upload-btn:hover {
+            transform: scale(1.1);
+            background-color: #e06a43;
+        }
+
+        .bg-upload-btn input[type="file"] {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>三维语义场景补全模型</h1>
+        <!-- 文件上传 -->
+        <label class="upload-btn">
+            上传/选择图像
+            <input type="file" id="imageInput" accept="image/*">
+        </label>
+
+        <!-- 模型选择 -->
+        <select id="modelSelect">
+            <option value="grayscale">时序融合模型</option>
+            <option value="invert">预训练SIM</option>
+        </select>
+
+        <!-- 提交按钮 -->
+        <button onclick="processImage()">补全</button>
+
+        <!-- 缩略图和结果 -->
+        <div class="image-container">
+            <div>
+                <h2>单目图像</h2>
+                <img id="thumbnail" alt="待上传">
+                <div class="placeholder">上传后显示缩略图</div>
+            </div>
+            <div>
+                <h2>三维补全结果</h2>
+                <img id="processedImage" alt="处理后的图像">
+                <div class="placeholder">处理后显示结果</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 悬浮背景上传按钮 -->
+    <label class="bg-upload-btn" title="更换背景">
+        +
+        <input type="file" id="bgInput" accept="image/*" onchange="changeBackground()">
+    </label>
+
+    <script>
+        document.getElementById('imageInput').addEventListener('change', function () {
+            const file = this.files[0];
+            const thumbnail = document.getElementById('thumbnail');
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function () {
+                    thumbnail.src = reader.result;
+                    thumbnail.nextElementSibling.style.display = 'none'; // 隐藏提示
+                };
+                reader.readAsDataURL(file);
+            } else {
+                thumbnail.src = ''; // 清空缩略图
+                thumbnail.nextElementSibling.style.display = 'block'; // 显示提示
+            }
+        });
+
+        async function processImage() {
+            const imageInput = document.getElementById('imageInput');
+            const modelSelect = document.getElementById('modelSelect');
+            const processedImage = document.getElementById('processedImage');
+
+            if (!imageInput.files[0]) {
+                alert('请选择一张图像！');
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = async function () {
+                const imageBase64 = reader.result;
+                const model = modelSelect.value;
+
+                try {
+                    const response = await fetch('/process', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ image: imageBase64, model: model })
+                    });
+
+                    const data = await response.json();
+                    if (response.ok) {
+                        processedImage.src = 'data:image/png;base64,' + data.processed_image;
+                        processedImage.nextElementSibling.style.display = 'none'; // 隐藏提示
+                    } else {
+                        alert(data.message);
+                    }
+                } catch (error) {
+                    console.error('请求出错:', error);
+                    alert('请求失败！');
+                }
+            };
+
+            reader.readAsDataURL(imageInput.files[0]);
+        }
+
+        function changeBackground() {
+            const bgInput = document.getElementById('bgInput');
+            const file = bgInput.files[0];
+
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function () {
+                    document.body.style.backgroundImage = `url(${reader.result})`;
+                    document.body.style.backgroundSize = 'cover';
+                    document.body.style.backgroundPosition = 'center';
+                };
+                reader.readAsDataURL(file);
+            }
+        }
+    </script>
+</body>
+</html>

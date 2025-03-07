@@ -65,6 +65,7 @@ class VoxFormer(MVXTwoStageDetector):
         else:
             return None
         if self.with_img_neck:
+            # torch.Size([5, 128, 24, 77])
             img_feats = self.img_neck(img_feats)
 
         img_feats_reshaped = []
@@ -126,13 +127,14 @@ class VoxFormer(MVXTwoStageDetector):
             dict: Losses of different branches.
         """
 
-        len_queue = img.size(1)
+        len_queue = img.size(1) #torch.Size([1, 1, 5, 3, 370, 1220])
         batch_size = img.shape[0]
         img_W = img.shape[5]
         img_H = img.shape[4]
         
         img_metas = [each[len_queue-1] for each in img_metas]
         img = img[:, -1, ...]
+        # torch.Size([1, 5, 128, 24, 77])
         img_feats = self.extract_feat(img=img) 
         losses = dict()
         losses_pts = self.forward_pts_train(img_feats, img_metas, target)

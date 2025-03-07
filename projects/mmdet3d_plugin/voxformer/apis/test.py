@@ -79,7 +79,7 @@ def custom_multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
     for i, data in enumerate(data_loader):
         with torch.no_grad():
             result = model(return_loss=False, rescale=True, **data)
-
+            result['T_velo_2_cam']=data['T_velo_2_cam']
             # print(result)
             # encode mask results
             if isinstance(result, dict):

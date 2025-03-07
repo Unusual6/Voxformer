@@ -4,6 +4,8 @@
 #  Modified by Yiming Li
 # -------------------------------------------------------------------
 
+# ./tools/dist_test.sh ./projects/configs/voxformer/voxformer-T_deform3D.py ./result/voxformer-T_deform3D/latest.pth 2
+# ./tools/dist_train.sh ./projects/configs/voxformer/voxformer-T.py 4
 import argparse
 import mmcv
 import os
@@ -25,13 +27,13 @@ from mmdet.datasets import replace_ImageToTensor
 import time
 import os.path as osp
 
-
+# export PYTHONPATH=/root/VoxFormer
 def parse_args():
     parser = argparse.ArgumentParser(
         description='MMDet test (and eval) a model')
     parser.add_argument('config', help='test config file path')
     parser.add_argument('checkpoint', help='checkpoint file')
-    parser.add_argument('--out', help='output result file in pickle format')
+    parser.add_argument('--out', default='test.pkl',help='output result file in pickle format')
     parser.add_argument(
         '--fuse-conv-bn',
         action='store_true',
@@ -238,8 +240,8 @@ def main():
     if rank == 0:
         if args.out:
             print(f'\nwriting results to {args.out}')
-            assert False
-            #mmcv.dump(outputs['bbox_results'], args.out)
+            # assert False
+            mmcv.dump(outputs, args.out)
         kwargs = {} if args.eval_options is None else args.eval_options
         kwargs['jsonfile_prefix'] = osp.join('test', args.config.split(
             '/')[-1].split('.')[-2], time.ctime().replace(' ', '_').replace(':', '_'))

@@ -255,7 +255,8 @@ class SemanticKittiDatasetStage2(Dataset):
         data_info = dict(
             img_metas = meta_dict,
             img = img,
-            target = target
+            target = target,
+            T_velo_2_cam = scan['T_velo_2_cam']
         )
         return data_info
 
