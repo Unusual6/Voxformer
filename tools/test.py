@@ -17,12 +17,12 @@ from mmcv.parallel import MMDataParallel, MMDistributedDataParallel
 from mmcv.runner import (get_dist_info, init_dist, load_checkpoint,
                          wrap_fp16_model)
 
-from mmdet3d.apis import single_gpu_test
+from mmdet3d.apis import single_gpu_test,single_gpu_test_one
 from mmdet3d.datasets import build_dataset
 from projects.mmdet3d_plugin.datasets.builder import build_dataloader
 from mmdet3d.models import build_model
 from mmdet.apis import set_random_seed
-from projects.mmdet3d_plugin.voxformer.apis.test import custom_multi_gpu_test
+from projects.mmdet3d_plugin.voxformer.apis.test import custom_multi_gpu_test,custom_multi_gpu_test_one
 from mmdet.datasets import replace_ImageToTensor
 import time
 import os.path as osp
@@ -33,7 +33,7 @@ def parse_args():
         description='MMDet test (and eval) a model')
     parser.add_argument('config', help='test config file path')
     parser.add_argument('checkpoint', help='checkpoint file')
-    parser.add_argument('--out', default='test.pkl',help='output result file in pickle format')
+    parser.add_argument('--out', default='test_output.pkl',help='output result file in pickle format')
     parser.add_argument(
         '--fuse-conv-bn',
         action='store_true',
@@ -160,7 +160,9 @@ def main():
     # set cudnn_benchmark
     if cfg.get('cudnn_benchmark', False):
         torch.backends.cudnn.benchmark = True
-
+    if cfg.get('vis_id', False):
+        vis_id = cfg.vis_id
+    print(vis_id)
     cfg.model.pretrained = None
     # in case the test dataset is concatenated
     samples_per_gpu = 1
@@ -193,6 +195,7 @@ def main():
 
     # build the dataloader
     dataset = build_dataset(cfg.data.test)
+    # dataset_one = build_dataset(cfg.data.one)
     data_loader = build_dataloader(
         dataset,
         samples_per_gpu=samples_per_gpu,
@@ -227,15 +230,16 @@ def main():
     if not distributed:
         # assert False
         model = MMDataParallel(model, device_ids=[0])
-        outputs = single_gpu_test(model, data_loader, args.show, args.show_dir)
+        # outputs = single_gpu_test(model, data_loader, args.show, args.show_dir)
+        outputs = single_gpu_test_one(vis_id,model, data_loader, args.show, args.show_dir)
     else:
         model = MMDistributedDataParallel(
             model.cuda(),
             device_ids=[torch.cuda.current_device()],
             broadcast_buffers=False)
-        outputs = custom_multi_gpu_test(model, data_loader, args.tmpdir,
-                                        args.gpu_collect)
-
+        outputs = custom_multi_gpu_test(model, data_loader, args.tmpdir, args.gpu_collect)
+        # outputs = custom_multi_gpu_test_one('000185',model, data_loader, args.tmpdir, args.gpu_collect)
+    print("len ",len(outputs))
     rank, _ = get_dist_info()
     if rank == 0:
         if args.out:

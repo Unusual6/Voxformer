@@ -180,7 +180,7 @@ class SemanticKittiDatasetStage2(Dataset):
             for proposal_path in glob.glob(glob_path):
 
                 self.scans.append(
-                    {
+                    {   "id":os.path.splitext(os.path.basename(proposal_path))[0],
                         "sequence": sequence,
                         "pose": self.poses[sequence],
                         "P": P,

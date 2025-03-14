@@ -426,7 +426,7 @@ def save_voxel_grid_as_image(
 
 # @hydra.main(config_path=None)
 def main():
-    scan = '/root/VoxFormer/test.pkl'
+    scan = '/root/VoxFormer/vis_data/T_deform3D.pkl'
     with open(scan, "rb") as handle:
         b = pickle.load(handle)
 

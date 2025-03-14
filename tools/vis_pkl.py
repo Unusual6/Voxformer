@@ -5,7 +5,7 @@ from omegaconf import DictConfig
 import hydra
 from mayavi import mlab
 
-# xvfb-run -a python tools/vis1.py
+# xvfb-run -a python tools/vis_pkl.py
 
 def get_grid_coords(dims, resolution):
     """
@@ -34,6 +34,8 @@ def get_grid_coords(dims, resolution):
 
 
 def draw1(
+    id,
+    pred,
     voxels,
     T_velo_2_cam,
     vox_origin,
@@ -128,23 +130,38 @@ def draw1(
 
     plt_plot.glyph.scale_mode = "scale_by_vector"
     plt_plot.module_manager.scalar_lut_manager.lut.table = colors
-
-    mlab.savefig('vis_output/ssc1.png')  # 保存到 /tmp
+    mlab.savefig(f'vis_output/{id}_{pred}_ssc.png')  # 保存到 /tmp
     print("Image saved to vis_output")
 
 def main():
-    scan = '/root/VoxFormer/test.pkl'
+    scan = '/root/VoxFormer/test_output.pkl'
     with open(scan, "rb") as handle:
         b = pickle.load(handle)
 
     print(len(b))
     for i in b:
+        # print(i)
         T_velo_2_cam = i["T_velo_2_cam"]
         vox_origin = np.array([0, -25.6, -2])
+        y_true = i["y_true"][0]
         y_pred = i["y_pred"][0]
-
+        id = i['id']
         draw1(
+            id,
+            "pred",
             y_pred,
+            T_velo_2_cam,
+            vox_origin,
+            # fov_mask_1,
+            img_size=(1220, 370),
+            f=707.0912,
+            voxel_size=0.2,
+            d=7,
+        )
+        draw1(
+            id,
+            "true",
+            y_true,
             T_velo_2_cam,
             vox_origin,
             # fov_mask_1,

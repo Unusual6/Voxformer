@@ -5,3 +5,5 @@ from .deformable_self_attention import DeformSelfAttention
 from .deformable_self_attention_3D_custom import DeformSelfAttention3DCustom
 from .encoder_3D import VoxFormerEncoder3D, VoxFormerLayer3D
 from .transformer_3D import PerceptionTransformer3D
+from .swin import SimMIM,SwinTransformer,SwinTransformerForSimMIM
+from .swin_transformer import SwinTransformer,SwinTransformerBlock

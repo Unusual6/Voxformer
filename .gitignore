@@ -12,6 +12,7 @@ __pycache__/
 *.pyo
 *.ply
 *.pkl
+*.png
 # Node.js 项目常见的缓存文件
 node_modules/
 ckpts

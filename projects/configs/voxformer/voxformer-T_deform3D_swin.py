@@ -1,12 +1,10 @@
-work_dir = 'result/voxformer-S'
+work_dir = 'result/voxformer-T_deform3D_swin'
 _base_ = [
     '../_base_/default_runtime.py'
 ]
 plugin = True
 plugin_dir = 'projects/mmdet3d_plugin/'
 
-
-vis_id = '000010'
 _num_layers_cross_ = 3
 _num_points_cross_ = 8
 _num_layers_self_ = 2
@@ -17,8 +15,8 @@ _ffn_dim_ = _dim_*2
 _num_levels_ = 1
 
 _labels_tag_ = 'labels'
-_num_cams_ = 1
-_temporal_ = []
+_num_cams_ = 5
+_temporal_ = [-12,-9,-6,-3]
 point_cloud_range = [0, -25.6, -2.0, 51.2, 25.6, 4.4]
 voxel_size = [0.2, 0.2, 0.2]
 
@@ -30,16 +28,26 @@ _query_tag_ = 'query_iou5203_pre7712_rec6153'
 
 model = dict(
    type='VoxFormer',
-   pretrained=dict(img='ckpts/resnet50-19c8e357.pth'),
+   pretrained=dict(img='ckpts/simmim_pretrain__swin_base__img192_window6__800ep.pth'),
    img_backbone=dict(
-       type='ResNet',
-       depth=50,
-       num_stages=4,
-       out_indices=(2,),
-       frozen_stages=1,
-       norm_cfg=dict(type='BN', requires_grad=False),
-       norm_eval=True,
-       style='pytorch'),
+        type='SwinTransformerForSimMIM',  # 替换为SimMIM的Swin Transformer
+        img_size=(192),                     # 输入图像大小，与SimMIM预训练一致
+        patch_size=4,                     # patch大小，与SimMIM预训练一致
+        in_chans=3,                       # 输入通道数（RGB）
+        embed_dim=128,                    # 嵌入维度，与SimMIM配置一致
+        depths=[2, 2, 18, 2],             # Swin-Base的层数
+        num_heads=[4, 8, 16, 32],         # 每阶段的注意力头数
+        window_size=6,                    # 窗口大小，与SimMIM预训练一致
+        mlp_ratio=4.0,                    # MLP比例，默认值
+        qkv_bias=True,                    # QKV偏置，默认值
+        qk_scale=None,                    # QK缩放，默认值
+        drop_rate=0.0,                    # Dropout率，与SimMIM一致
+        drop_path_rate=0.0,               # DropPath率，与SimMIM一致
+        ape=False,                        # 绝对位置编码，默认关闭
+        patch_norm=True,                  # patch归一化，默认开启
+        use_checkpoint=False,             # 是否使用检查点节省内存
+        out_indices=(3,),                 # 输出第4阶段特征，与ResNet替换后一致性调整
+        frozen_stages=1),
    img_neck=dict(
        type='FPN',
        in_channels=[1024],
@@ -63,6 +71,7 @@ model = dict(
            use_shift=True,
            embed_dims=_dim_,
            num_cams = _num_cams_,
+           use_cams_embeds=False,
            encoder=dict(
                type='VoxFormerEncoder',
                num_layers=_num_layers_cross_,
@@ -96,22 +105,22 @@ model = dict(
                    ffn_dropout=0.1,
                    operation_order=('cross_attn', 'norm', 'ffn', 'norm')))),
        self_transformer=dict(
-           type='PerceptionTransformer',
+           type='PerceptionTransformer3D',
            rotate_prev_bev=True,
            use_shift=True,
            embed_dims=_dim_,
            num_cams = _num_cams_,
            encoder=dict(
-               type='VoxFormerEncoder',
+               type='VoxFormerEncoder3D',
                num_layers=_num_layers_self_,
                pc_range=point_cloud_range,
                num_points_in_pillar=8,
                return_intermediate=False,
                transformerlayers=dict(
-                   type='VoxFormerLayer',
+                   type='VoxFormerLayer3D',
                    attn_cfgs=[
                        dict(
-                           type='DeformSelfAttention',
+                           type='DeformSelfAttention3DCustom',
                            embed_dims=_dim_,
                            num_levels=1,
                            num_points=_num_points_self_)
@@ -199,7 +208,7 @@ lr_config = dict(
    warmup_ratio=1.0 / 3,
    min_lr_ratio=1e-3)
 total_epochs = 20
-evaluation = dict(interval=2)
+evaluation = dict(interval=1)
 
 runner = dict(type='EpochBasedRunner', max_epochs=total_epochs)
 log_config = dict(
@@ -211,4 +220,3 @@ log_config = dict(
 
 checkpoint_config = None
 checkpoint_config = dict(interval=2)
-resume_from='/root/VoxFormer/result/voxformer-S/epoch_2.pth'

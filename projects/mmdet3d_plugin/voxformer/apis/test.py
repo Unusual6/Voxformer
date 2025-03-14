@@ -126,6 +126,55 @@ def custom_multi_gpu_test(model, data_loader, tmpdir=None, gpu_collect=False):
     return results
     # return {'bbox_results': bbox_results, 'mask_results': mask_results}
 
+def custom_multi_gpu_test_one(id,model, data_loader, tmpdir=None, gpu_collect=False):
+    
+    model.eval()
+    results = []
+
+    dataset = data_loader.dataset
+    rank, world_size = get_dist_info()
+    if rank == 0:
+        prog_bar = mmcv.ProgressBar(len(dataset))
+    # time.sleep(2)  # This line can prevent deadlock problem in some cases.
+    # have_mask = False
+    for i, data in enumerate(data_loader):
+        with torch.no_grad():
+            if list(data['img_metas'].data[0][0].values())[0]['frame_id'] == id:
+                result = model(return_loss=False, rescale=True, **data)
+                result['T_velo_2_cam']=data['T_velo_2_cam']
+                # print(result)
+                # encode mask results
+                if isinstance(result, dict):
+                    # if 'y_pred' in result.keys():
+                    # y_pred = result['y_pred']
+                    batch_size = len(result['y_pred'])
+                    # y_preds.extend(y_pred)
+
+                    # y_true = result['y_true']
+                    # batch_size = len(result['y_true'])
+                    results.append(result)
+
+
+
+    # collect results from all ranks
+    if gpu_collect:
+        results = collect_results_gpu(results, len(dataset))
+        # if have_mask:
+        #     mask_results = collect_results_gpu(mask_results, len(dataset))
+        # else:
+        #     mask_results = None
+    else:
+        results = collect_results_cpu(results, len(dataset), tmpdir)
+        # tmpdir = tmpdir+'_mask' if tmpdir is not None else None
+        # if have_mask:
+        #     mask_results = collect_results_cpu(mask_results, len(dataset), tmpdir)
+        # else:
+        #     mask_results = None
+
+    # if mask_results is None:
+    return results
+    # return {'bbox_results': bbox_results, 'mask_results': mask_results}
+
 
 def collect_results_cpu(result_part, size, tmpdir=None):
     rank, world_size = get_dist_info()

@@ -114,7 +114,9 @@ class VoxFormer(MVXTwoStageDetector):
     def forward_train(self,
                       img_metas=None,
                       img=None,
-                      target=None):
+                      target=None,
+                      T_velo_2_cam=None
+                      ):
         """Forward training function.
         Args:
             img_metas (list[dict], optional): Meta information of each sample.

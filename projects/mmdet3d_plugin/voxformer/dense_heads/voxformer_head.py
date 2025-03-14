@@ -86,7 +86,7 @@ class VoxFormerHead(nn.Module):
         bev_pos_cross_attn = self.positional_encoding(torch.zeros((bs, 512, 512), device=bev_queries.device).to(dtype)).to(dtype) # [1, dim, 128*4, 128*4]
         bev_pos_self_attn = self.positional_encoding(torch.zeros((bs, 512, 512), device=bev_queries.device).to(dtype)).to(dtype) # [1, dim, 128*4, 128*4]
 
-        # Load query proposals
+        # Load query proposals 深度估计预处理的稀疏体素
         proposal =  img_metas[0]['proposal'].reshape(self.bev_h, self.bev_w, self.bev_z)
         unmasked_idx = np.asarray(np.where(proposal.reshape(-1)>0)).astype(np.int32)
         masked_idx = np.asarray(np.where(proposal.reshape(-1)==0)).astype(np.int32)
