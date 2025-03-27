@@ -3,12 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>图像处理</title>
+    <title>SemanticKitti场景语义补全可视化系统</title>
+    <link rel="icon" href="/static/1733047779687.jpg" type="image/png">
     <style>
         /* 通用样式 */
         body {
             font-family: 'Arial', sans-serif;
             background-color: #f4f4f9;
+            background-image: url('/static/1733047779687.jpg');
+            background-size: cover; /* 背景图片填充整个页面 */
+            background-position: center; /* 背景图片居中显示 */
+            background-repeat: no-repeat; 
             margin: 0;
             padding: 0;
             display: flex;
@@ -33,11 +38,12 @@
 
         /* 容器 */
         .container {
-            background: #ffffff;
+            background: #d9d6d6;
             box-shadow: 0px 4px 8px rgba(0, 0, 0, 0.1);
             border-radius: 10px;
             padding: 20px;
-            max-width: 600px;
+            height: 500px;
+            max-width: 1200px;
             width: 100%;
             text-align: center;
         }
@@ -91,17 +97,41 @@
         /* 图像显示样式 */
         .image-container {
             display: flex;
-            justify-content: space-around;
-            align-items: center;
-            margin-top: 20px;
+            justify-content: space-around; /* 确保两张图片左右排列 */
+            align-items: flex-start; /* 让所有内容顶部对齐 */
+            text-align: center;
+            min-height: 300px; /* 设定一个最小高度，避免图片上传时改变大小 */
         }
 
+        /* 让每个图片框的内容固定 */
+        .image-container div {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            width: 45%; /* 确保两个 div 各占一半空间 */
+            min-height: 300px; /* 保持高度一致 */
+        }
+
+        /* 固定 h2 位置 */
+        .image-container h2 {
+            margin: 0;
+            padding-bottom: 10px;
+            flex-shrink: 0; /* 防止标题被压缩 */
+        }
+
+        /* 让图片有固定区域 */
         .image-container img {
-            max-width: 150px;
-            max-height: 150px;
+            width: 100%;
+            max-width: 500px;
+            max-height: 300px;
             border: 2px solid #ddd;
             border-radius: 5px;
             object-fit: contain;
+        }
+
+        /* 确保提示文字不影响布局 */
+        .placeholder {
+            height: 20px;
         }
 
         .placeholder {
@@ -137,6 +167,40 @@
         .bg-upload-btn input[type="file"] {
             display: none;
         }
+        
+        /* 模态窗口样式 */
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.7);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        /* 关闭按钮 */
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 30px;
+            color: white;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+
+        /* 放大的图片样式 */
+        .modal-content {
+            max-width: 90%;
+            max-height: 90%;
+            border-radius: 5px;
+        }
+
     </style>
 </head>
 <body>
@@ -150,33 +214,52 @@
 
         <!-- 模型选择 -->
         <select id="modelSelect">
-            <option value="grayscale">时序融合模型</option>
-            <option value="invert">预训练SIM</option>
+            <option value="shixu">时序融合模型</option>
+            <option value="zhou">轴向编码模型</option>
+            <option value="normal">普通模型</option>
         </select>
 
         <!-- 提交按钮 -->
         <button onclick="processImage()">补全</button>
-
+        <button id="viewPlyButton">查看 PLY</button>
         <!-- 缩略图和结果 -->
         <div class="image-container">
             <div>
                 <h2>单目图像</h2>
-                <img id="thumbnail" alt="待上传">
-                <div class="placeholder">上传后显示缩略图</div>
+                <img id="thumbnail" alt="待上传" onclick="openModal('thumbnail')">
+                <!-- <div class="placeholder">上传后显示缩略图</div> -->
             </div>
             <div>
                 <h2>三维补全结果</h2>
-                <img id="processedImage" alt="处理后的图像">
-                <div class="placeholder">处理后显示结果</div>
+                <img id="processedImage" alt="补全结果图像" onclick="openModal('processedImage')">
+                <!-- <div class="placeholder">补全后显示结果</div> -->
             </div>
         </div>
     </div>
+        <!-- 模态窗口（点击图片放大查看） -->
+    <div id="imageModal" class="modal"  style="display: none;" onclick="closeModal()">
+        <span class="close">&times;</span>
+        <img class="modal-content" id="modalImg">
+    </div>
+    <div id="loadingAnimation" style="display: none;">
+        <!-- <p>请稍候...</p>
+        这里可以放一个动画图标 -->
+        <p id="timer" style="display: none;">处理时间: 0秒</p>
+    </div>
+    
+    
 
+
+
+    
     <!-- 悬浮背景上传按钮 -->
     <label class="bg-upload-btn" title="更换背景">
         +
         <input type="file" id="bgInput" accept="image/*" onchange="changeBackground()">
     </label>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/PLYLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
 
     <script>
         document.getElementById('imageInput').addEventListener('change', function () {
@@ -200,7 +283,23 @@
             const imageInput = document.getElementById('imageInput');
             const modelSelect = document.getElementById('modelSelect');
             const processedImage = document.getElementById('processedImage');
-
+            const loadingAnimation = document.getElementById('loadingAnimation');
+            const imageName = imageInput.files[0].name;
+            const timerElement = document.getElementById('timer'); // 用来显示计时的元素
+            loadingAnimation.style.display = 'block';
+            timerElement.innerHTML = 'none'; // 先不显示计时
+        
+            setTimeout(() => {
+                timerElement.style.display = 'block'; // 显示计时
+                let seconds = 0;
+                timerElement.innerHTML = `处理时间: ${seconds}秒`;
+        
+                // 启动计时器
+                window.timerInterval = setInterval(() => {
+                    seconds++;
+                    timerElement.innerHTML = `处理时间: ${seconds}秒`;
+                }, 1000);
+            }, 1000); // 1秒后执行
             if (!imageInput.files[0]) {
                 alert('请选择一张图像！');
                 return;
@@ -215,13 +314,38 @@
                     const response = await fetch('/process', {
                         method: 'POST',
                         headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ image: imageBase64, model: model })
+                        body: JSON.stringify({ image: imageBase64,image_name:imageName, model: model })
                     });
 
                     const data = await response.json();
+                    console.log("完整 JSON 响应:", data);  
+                    console.log("PLY Data 长度:", data.ply_data ? data.ply_data.length : "未找到 ply_data");
                     if (response.ok) {
+                        loadingAnimation.style.display = 'none';
+                        clearInterval(timerInterval);
                         processedImage.src = 'data:image/png;base64,' + data.processed_image;
-                        processedImage.nextElementSibling.style.display = 'none'; // 隐藏提示
+                        processedImage.onclick = function () { openModal('processedImage'); };
+                        
+                            // Base64 转换为 Blob
+                        const byteCharacters = atob(data.ply_data);
+
+                        const byteNumbers = new Array(byteCharacters.length);
+                        for (let i = 0; i < byteCharacters.length; i++) {
+                            byteNumbers[i] = byteCharacters.charCodeAt(i);
+                        }
+                        const byteArray = new Uint8Array(byteNumbers);
+                        const blob = new Blob([byteArray], { type: 'application/octet-stream' });
+                        const url = URL.createObjectURL(blob);
+                        const plyURL = URL.createObjectURL(blob);
+                        console.log("PLY 文件 URL:", plyURL);
+
+
+                        // 🔥✅ 传递 PLY URL 并跳转新页面
+                        localStorage.setItem("plyURL", plyURL); // 存储 URL
+                        document.getElementById("viewPlyButton").onclick = function () {
+                            window.open("/static/view_ply.html", "_blank"); // 打开新页面
+                        };
+                    
                     } else {
                         alert(data.message);
                     }
@@ -234,6 +358,20 @@
             reader.readAsDataURL(imageInput.files[0]);
         }
 
+            // 打开模态窗口
+        function openModal(imageId) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImg');
+            const imgSrc = document.getElementById(imageId).src;
+
+            if (imgSrc) {
+                modal.style.display = 'flex';
+                modalImg.src = imgSrc;
+            }
+        }   
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
         function changeBackground() {
             const bgInput = document.getElementById('bgInput');
             const file = bgInput.files[0];

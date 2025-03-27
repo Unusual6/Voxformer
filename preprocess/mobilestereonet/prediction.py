@@ -31,7 +31,7 @@ parser.add_argument('--datapath', required=True, help='data path')
 parser.add_argument('--testlist', required=True, help='testing list')
 parser.add_argument('--loadckpt', required=True, help='load the weights from a specific checkpoint')
 parser.add_argument('--colored', default=1, help='save colored or save for benchmark submission')
-parser.add_argument('--num_seq', type=str, default=00, help='number of sequence')
+parser.add_argument('--num_seq', type=str, default='08', help='number of sequence')
 parser.add_argument('--savepath', required=True, help='save path')
 parser.add_argument('--baseline', type=float, default=388.1823, help='baseline*focal')
 
@@ -115,3 +115,4 @@ def test_sample(sample):
 
 if __name__ == '__main__':
     test(args)
+# python prediction.py --datapath /data/kitti/kitti/dataset/sequences/08/ --testlist /root/VoxFormer/preprocess/mobilestereonet/filenames/08.txt --loadckpt /root/VoxFormer/preprocess/mobilestereonet/MSNet3D_SF_DS_KITTI2015.ckpt --dataset kitti --colored True --model MSNet2D

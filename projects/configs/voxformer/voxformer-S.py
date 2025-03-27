@@ -6,7 +6,7 @@ plugin = True
 plugin_dir = 'projects/mmdet3d_plugin/'
 
 
-vis_id = '000010'
+vis_id = '000015'
 _num_layers_cross_ = 3
 _num_points_cross_ = 8
 _num_layers_self_ = 2
@@ -211,4 +211,4 @@ log_config = dict(
 
 checkpoint_config = None
 checkpoint_config = dict(interval=2)
-resume_from='/root/VoxFormer/result/voxformer-S/epoch_2.pth'
+resume_from='/root/VoxFormer/result/voxformer-S/latest.pth'

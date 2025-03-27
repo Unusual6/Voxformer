@@ -5,6 +5,7 @@ _base_ = [
 plugin = True
 plugin_dir = 'projects/mmdet3d_plugin/'
 
+vis_id = '000080'
 _num_layers_cross_ = 3
 _num_points_cross_ = 8
 _num_layers_self_ = 2

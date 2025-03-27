@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>查看 PLY 模型</title>
+    <link rel="icon" href="/static/1733047779687.jpg" type="image/png">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/loaders/PLYLoader.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three/examples/js/controls/OrbitControls.js"></script>
+    <style>
+        body { margin: 0; background-color: rgba(0, 0, 0, 0.796); }
+        canvas { display: block; }
+    </style>
+</head>
+<body>
+    <script>
+        window.onload = function () {
+            const plyURL = localStorage.getItem("plyURL");
+            if (!plyURL) {
+                alert("未找到 PLY 文件！");
+                return;
+            }
+
+            // ✅ 初始化 Three.js 场景
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(window.innerWidth, window.innerHeight);
+            document.body.appendChild(renderer.domElement);
+
+            // ✅ 交互控制（旋转、缩放、拖拽）
+            const controls = new THREE.OrbitControls(camera, renderer.domElement);
+            controls.enableDamping = true;
+            controls.dampingFactor = 0.05;
+            controls.screenSpacePanning = false;
+            controls.minDistance = 1;
+            controls.maxDistance = 10;
+
+            // ✅ 添加光照
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.5);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 1);
+            directionalLight.position.set(1, 1, 1).normalize();
+            scene.add(directionalLight);    
+            scene.background = new THREE.Color(0xd3d3d3); // 设置白色背景
+
+            // 渲染 PLY
+            function loadPLY(url) {
+                const loader = new THREE.PLYLoader();
+                loader.load(url, function (geometry) {
+                    console.log("PLY 加载成功！");
+                    geometry.computeVertexNormals(); // 计算法线
+
+                    let material;
+                    if (geometry.hasAttribute("color")) {
+                        // 使用 PLY 自带的颜色
+                        material = new THREE.PointsMaterial({
+                            vertexColors: true, // 让 PLY 颜色生效
+                            size: 0.1, // 体素大小，调大一点更明显
+                        });
+                    } else {
+                        // 默认显示黑色点
+                        material = new THREE.PointsMaterial({
+                            color: 0x000000,
+                            size: 0.1,
+                        });
+                    }
+
+                    const points = new THREE.Points(geometry, material); // 使用 Points 显示体素
+                    points.scale.set(0.1, 0.1, 0.1); // 调整体素大小
+                    scene.add(points);
+
+                    // 计算模型的边界框并调整位置
+                    const box = new THREE.Box3().setFromObject(points);
+                    const center = box.getCenter(new THREE.Vector3());
+                    points.position.sub(center); // 调整模型居中
+
+                    // 设置相机距离，使得模型完全显示
+                    const size = box.getSize(new THREE.Vector3());
+                    const maxDim = Math.max(size.x, size.y, size.z);
+                    const cameraDistance = maxDim * 2;  // 相机与模型的距离是最大尺寸的两倍
+                    camera.position.set(0, 0, cameraDistance);
+                    camera.lookAt(center);  // 相机朝向模型的中心
+
+                }, undefined, function (error) {
+                    console.error("PLY 加载失败:", error);
+                });
+            }
+
+            loadPLY(plyURL);
+
+            // 动画渲染循环
+            function animate() {
+                requestAnimationFrame(animate);
+                controls.update();  // 让鼠标交互生效
+                renderer.render(scene, camera);
+            }
+            animate();
+        };
+    </script>
+</body>
+</html>

@@ -392,7 +392,12 @@ def save_voxel_grid_as_image(
     point_cloud = o3d.geometry.PointCloud()
     point_cloud.points = o3d.utility.Vector3dVector(valid_voxels[:, :3])
     point_cloud.colors = o3d.utility.Vector3dVector(voxel_colors)
+    ply_file_path = "output.ply"
 
+    # 保存为 .ply 文件
+    o3d.io.write_point_cloud(ply_file_path, point_cloud)
+
+    print(f"点云数据已成功保存到 {ply_file_path}")
     # 创建可视化窗口
     vis = o3d.visualization.Visualizer()
     vis.create_window(width=width, height=height, visible=True)
@@ -439,7 +444,7 @@ def main():
     # y_pred = np.argmax(y_pred, axis=1)
 
     # save_voxel_grid(y_pred, T_velo_2_cam, vox_origin)
-    # save_voxel_grid_as_image(y_pred, T_velo_2_cam, vox_origin)
+    save_voxel_grid_as_image(y_pred, T_velo_2_cam, vox_origin)
 
     draw1(
         y_pred,
