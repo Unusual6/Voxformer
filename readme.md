@@ -1,10 +1,8 @@
-train:
-tools/dist_train.sh CONFIG_path 2 
+### 使用说明
 
-test:
-tools/dist_test.sh CONFIG_path CHECKPOINT_path 2
-
-Vis_system:
-1. cd tools/vis_system
-2. python main.py
-3. open http://127.0.0.1:5000
+训练模型命令为：`tools/dist_train.sh CONFIG_path 2`；
+测试模型命令为：`tools/dist_test.sh CONFIG_path CHECKPOINT_path 2`。
+可视化系统使用方法如下：
+  进入目录 `cd tools/vis_system`，
+  运行 `python main.py`，
+  最后在浏览器中打开 [http://127.0.0.1:5000](http://127.0.0.1:5000) 查看结果。
